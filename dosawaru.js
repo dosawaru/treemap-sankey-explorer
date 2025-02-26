@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
-  let letterCount = {};
+  let letterCount = { consonants: {}, vowels: {}, punctuation: {} };
+
+  const map = d3.select("#treemap_svg");
 
   function saveText() {
     // Get the text from the textarea
@@ -19,21 +21,16 @@ document.addEventListener("DOMContentLoaded", function () {
     // Loop through each character in the text
     for (let c of text) {
       // Only count the characters that are punctuation, consonants, vowels and ignore everything else
-      if (
-        consonants.includes(c) ||
-        vowels.includes(c) ||
-        punctuation.includes(c)
-      ) {
-        // Add the character to the object and increment
-        letterCount[c] = (letterCount[c] || 0) + 1;
-      }
-
+      // Add the character to the object and increment
       // Count the number of punctuation, consonants, and vowels
       if (consonants.includes(c)) {
+        letterCount.consonants[c] = (letterCount.consonants[c] || 0) + 1;
         consonantsCount++;
       } else if (vowels.includes(c)) {
+        letterCount.vowels[c] = (letterCount.vowels[c] || 0) + 1;
         vowelsCount++;
       } else if (punctuation.includes(c)) {
+        letterCount.punctuation[c] = (letterCount.punctuation[c] || 0) + 1;
         punctuationCount++;
       }
     }
@@ -41,7 +38,12 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log(consonantsCount);
     console.log(vowelsCount);
     console.log(punctuationCount);
+
+    // Draw the treemap
+    drawTreemap();
   }
+
+  function drawTreemap() {}
 
   // Add an event listener to the button
   document.getElementById("save").addEventListener("click", function () {
