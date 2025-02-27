@@ -85,6 +85,21 @@ document.addEventListener("DOMContentLoaded", function () {
       .padding(2)
       .round(true);
 
+    let tooltip = d3
+      .select("body")
+      .append("div")
+      .style("position", "absolute")
+      .style("text-align", "center")
+      .style("background", "white")
+      .style("width", "auto")
+      .style("height", "auto")
+      .style("padding", "5px")
+      .style("font-size", "12px")
+      .style("border", "1px solid black")
+      .style("border-radius", "5px")
+      .style("visibility", "hidden")
+      .style("pointer-events", "none");
+
     // Apply layout to each element in the data
     treemapLayout(hierarchy);
 
@@ -100,12 +115,38 @@ document.addEventListener("DOMContentLoaded", function () {
       .append("rect")
       .attr("width", (d) => d.x1 - d.x0)
       .attr("height", (d) => d.y1 - d.y0)
-      .attr("fill", (d) => treeColor(d.data.name))
+      .attr("fill", (d) => treeColor(d.parent.data.name))
       .attr("stroke", "black")
       .attr("stroke-width", 0.5)
       .attr("rx", 1)
       .attr("ry", 1)
-      .attr("opacity", 0.9);
+      .attr("opacity", 0.9)
+      .on("mouseover", function (e, d) {
+        tooltip
+          .style("visibility", "visible")
+          .html(
+            "Character:<b>" +
+              d.data.char +
+              "</b><br/> Occurrence(s):  <b>" +
+              d.data.value +
+              "</b>"
+          );
+      })
+      .on("mousemove", function (e, d) {
+        tooltip
+          .html(
+            "Character: <b>" +
+              d.data.char +
+              "</b><br/> Occurrence(s):  <b>" +
+              d.data.value +
+              "</b>"
+          )
+          .style("left", `${e.pageX + 10}px`) // Move with cursor
+          .style("top", `${e.pageY - 20}px`);
+      })
+      .on("mouseout", function (e, d) {
+        tooltip.style("visibility", "hidden");
+      });
   }
 
   // Format the data for the treemap in a hierarchal structure
