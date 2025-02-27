@@ -1,6 +1,7 @@
 // Define  dimension for treemap
 const width = 580;
 const height = 400;
+const margin = { top: 10, right: 10, bottom: 10, left: 10 };
 
 // Define the characters that are punctuation, consonants, and vowels
 const consonants = "bcdfghjklmnpqrstvwxz";
@@ -124,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("rx", 1)
       .attr("ry", 1)
       .attr("opacity", 0.9)
-      // Use mouseover, mousemove, and mouseout to keep track of the mouse position on screen and display the information when hovering over the leaft
+      // Use mouseover, mousemove, and mouseout to keep track of the mouse position on screen and display the information when hovering over the leaf
       .on("mouseover", function (e, d) {
         tooltip
           .style("visibility", "visible")
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", function () {
           )
           .style("left", `${e.pageX + 5}px`) // Move with cursor
           .style("top", `${e.pageY + 20}px`);
+        // console.log(e.x, e.y);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
@@ -185,6 +187,98 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
+  function drawSankey() {
+    let width_sankey = 600 - margin.left - margin.right;
+    let height_2 = height - margin.top - margin.bottom;
+
+    // Create svg object
+    let diagram = d3
+      .select("#sankey_svg")
+      .append("svg")
+      .attr("width", width_sankey + margin.left + margin.right)
+      .attr("height", height_2 + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    let tooltip = d3
+      .select("body")
+      .append("div")
+      .style("position", "absolute")
+      .style("text-align", "center")
+      .style("background", "white")
+      .style("width", "auto")
+      .style("height", "auto")
+      .style("padding", "5px")
+      .style("font-size", "12px")
+      .style("border", "1px solid black")
+      .style("border-radius", "5px")
+      .style("visibility", "hidden")
+      .style("pointer-events", "none");
+
+    // Set sankey properties
+    let sankey = d3
+      .sankey()
+      .nodeWidth(20)
+      .nodePadding(20)
+      .size([width_sankey - margin.left - margin.right, height_2]);
+
+    // Sankey Color
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    path = sankey.links();
+
+    d3.json("sankey.json").then(function (sankeydata) {
+      graph = sankey(sankeydata);
+
+      // Add links
+      link = diagram
+        .append("g")
+        .selectAll(".link")
+        .data(graph.links)
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("d", d3.sankeyLinkHorizontal())
+        .style("stroke", "grey")
+        .style("opacity", 0.7)
+        .style("fill", "none")
+        .style("stroke-width", (d) => Math.max(1, d.width));
+      // .sort((a, b) => b.dy - a.dy);
+
+      // Add nodes
+      let node = diagram
+        .append("g")
+        .selectAll(".node")
+        .data(graph.nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .on("mouseover", function (e, d) {
+          tooltip.style("visibility", "visible").html("Character:<b>" + d.name);
+        })
+        .on("mousemove", function (e, d) {
+          tooltip
+            .html("Character: <b>" + d.name)
+            .style("left", `${e.pageX + 5}px`) // Move with cursor
+            .style("top", `${e.pageY + 20}px`);
+          // console.log(e.x, e.y);
+        })
+        .on("mouseout", function (e, d) {
+          tooltip.style("visibility", "hidden");
+        });
+
+      node
+        .append("rect")
+        .attr("x", (d) => d.x0)
+        .attr("y", (d) => d.y0)
+        .attr("height", (d) => d.y1 - d.y0)
+        .attr("width", sankey.nodeWidth())
+        .style("fill", (d) => (d.color = color(d.name.replace(/ .*/, ""))))
+        .style("stroke", (d) => d3.rgb(d.color).darker(2))
+        .append("title");
+    });
+  }
+
   // Add an event listener to the button
   document.getElementById("save").addEventListener("click", function () {
     //Check for valid input
@@ -192,6 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {
       alert(`Text area is blank, please enter something 😊`);
     } else {
       saveText();
+      drawSankey();
     }
   });
 });
