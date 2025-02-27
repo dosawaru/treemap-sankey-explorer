@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Create treemap
   let map = d3.select("#treemap_svg");
 
+  // Categorize and save the inputted text
   function saveText() {
     // Clears char count
     charCount = { consonants: {}, vowels: {}, punctuation: {} };
@@ -44,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
         punctuationCount++;
       }
     }
-
+    //Check for valid input
     if (consonantsCount + vowelsCount + punctuationCount == 0) {
       alert(
         `Invalid input, please enter in as least one of the following: \nconsonants -> ${consonants} \nvowels -> ${vowels} \npunctuation -> ${punctuation} \n😊`
@@ -60,6 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
     drawTreemap();
   }
 
+  // Generate TreeMap for save text
   function drawTreemap() {
     // Clear draw
     map.selectAll("*").remove();
@@ -85,6 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .padding(2)
       .round(true);
 
+    // Define and style Div for tooltips
     let tooltip = d3
       .select("body")
       .append("div")
@@ -117,10 +120,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("height", (d) => d.y1 - d.y0)
       .attr("fill", (d) => treeColor(d.parent.data.name))
       .attr("stroke", "black")
-      .attr("stroke-width", 0.5)
+      .attr("stroke-width", 1)
       .attr("rx", 1)
       .attr("ry", 1)
       .attr("opacity", 0.9)
+      // Use mouseover, mousemove, and mouseout to keep track of the mouse position on screen and display the information when hovering over the leaft
       .on("mouseover", function (e, d) {
         tooltip
           .style("visibility", "visible")
@@ -141,8 +145,8 @@ document.addEventListener("DOMContentLoaded", function () {
               d.data.value +
               "</b>"
           )
-          .style("left", `${e.pageX + 10}px`) // Move with cursor
-          .style("top", `${e.pageY - 20}px`);
+          .style("left", `${e.pageX + 5}px`) // Move with cursor
+          .style("top", `${e.pageY + 20}px`);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
