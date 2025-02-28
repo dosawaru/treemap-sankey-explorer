@@ -9,6 +9,8 @@ const vowels = "aeiouy";
 const punctuation = ".,!?:;";
 
 let data = {};
+let text = "";
+let singleStringData = "";
 
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
@@ -24,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     charCount = { consonants: {}, vowels: {}, punctuation: {} };
 
     // Get the text from the textarea
-    let text = document.getElementById("wordbox").value;
+    text = document.getElementById("wordbox").value.toLowerCase();
 
     // Keep track of the numer of punctuation, consonants, and vowels
     let consonantsCount = 0;
@@ -36,6 +38,14 @@ document.addEventListener("DOMContentLoaded", function () {
       // Only count the characters that are punctuation, consonants, vowels and ignore everything else
       // Add the character to the object and increment
       // Count the number of punctuation, consonants, and vowels
+      if (
+        consonants.includes(c) ||
+        vowels.includes(c) ||
+        punctuation.includes(c)
+      ) {
+        singleStringData += c;
+      }
+
       if (consonants.includes(c)) {
         charCount.consonants[c] = (charCount.consonants[c] || 0) + 1;
         consonantsCount++;
@@ -58,6 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log(consonantsCount);
     console.log(vowelsCount);
     console.log(punctuationCount);
+    console.log(singleStringData);
 
     // Draw the treemap
     drawTreemap();
@@ -65,10 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Generate TreeMap for save text
   function drawTreemap() {
-    // redraw
-    map.selectAll("*").remove();
-    map = d3.select("#treemap_svg");
-
     // Format Data
     formatData();
     console.log(data);
@@ -285,12 +292,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function clear() {
+    data = {};
+    text = "";
+    singleStringData = "";
+
+    // redraw
+    map.selectAll("*").remove();
+    map = d3.select("#treemap_svg");
+  }
+
   // Add an event listener to the button
   document.getElementById("save").addEventListener("click", function () {
     //Check for valid input
     if (document.getElementById("wordbox").value == "") {
       alert(`Text area is blank, please enter something 😊`);
     } else {
+      clear();
       saveText();
       drawSankey();
     }
