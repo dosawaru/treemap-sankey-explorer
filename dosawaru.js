@@ -1,5 +1,6 @@
 // Define  dimension for treemap
 const width = 580;
+const width2 = 600;
 const height = 400;
 const margin = { top: 10, right: 10, bottom: 10, left: 10 };
 
@@ -14,7 +15,8 @@ const colorScale = d3
   .domain(["consonants", "vowels", "punctuation"])
   .range(["#A7C7E7", "#FFB07C", "#FF6961"]);
 
-let data = {};
+// Global varibales
+let treemapData = {};
 let text = "";
 let singleStringData = "";
 let sankeyData;
@@ -47,14 +49,6 @@ document.addEventListener("DOMContentLoaded", function () {
       // Only count the characters that are punctuation, consonants, vowels and ignore everything else
       // Add the character to the object and increment
       // Count the number of punctuation, consonants, and vowels
-      if (
-        consonants.includes(c) ||
-        vowels.includes(c) ||
-        punctuation.includes(c)
-      ) {
-        singleStringData += c;
-      }
-
       if (consonants.includes(c)) {
         charCount.consonants[c] = (charCount.consonants[c] || 0) + 1;
         consonantsCount++;
@@ -65,6 +59,15 @@ document.addEventListener("DOMContentLoaded", function () {
         charCount.punctuation[c] = (charCount.punctuation[c] || 0) + 1;
         punctuationCount++;
       }
+
+      // Save data in a format with only valid characters
+      if (
+        consonants.includes(c) ||
+        vowels.includes(c) ||
+        punctuation.includes(c)
+      ) {
+        singleStringData += c;
+      }
     }
     //Check for valid input
     if (consonantsCount + vowelsCount + punctuationCount == 0) {
@@ -73,12 +76,8 @@ document.addEventListener("DOMContentLoaded", function () {
       );
       return;
     }
-    console.log(charCount);
-    console.log(consonantsCount);
-    console.log(vowelsCount);
-    console.log(punctuationCount);
-    console.log(singleStringData);
 
+    console.log("Text:" + singleStringData);
     // Draw the treemap
     drawTreemap();
   }
@@ -86,12 +85,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // Generate TreeMap for save text
   function drawTreemap() {
     // Format Data
-    formatData();
-    console.log(data);
+    formatTreemapData();
 
     // Give the data in cluster format
     const hierarchy = d3
-      .hierarchy(data)
+      .hierarchy(treemapData)
       .sum((d) => d.value) // Sum the value of each child
       .sort((a, b) => b.value - a.value); // Sort by desending order
 
@@ -99,11 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const treeColor = colorScale;
 
     // Layout for treemap
-    const treemapLayout = d3
-      .treemap()
-      .size([width, height])
-      .padding(2)
-      .round(true);
+    const treemapLayout = d3.treemap().size([width, height]).padding(2.5);
 
     // Define and style Div for tooltips
     let tooltip = d3
@@ -115,8 +109,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .style("width", "auto")
       .style("height", "auto")
       .style("padding", "5px")
-      .style("font-size", "12px")
-      .style("border", "1px solid black")
+      .style("font-size", "14px")
+      .style("border", "2px solid black")
       .style("border-radius", "5px")
       .style("visibility", "hidden")
       .style("pointer-events", "none");
@@ -139,6 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("fill", (d) => treeColor(d.parent.data.name))
       .attr("stroke", "black")
       .attr("stroke-width", 1)
+      .attr("class", "leaf")
       .attr("rx", 1)
       .attr("ry", 1)
       .attr("opacity", 0.9)
@@ -147,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
         tooltip
           .style("visibility", "visible")
           .html(
-            "Character:<b>" +
+            "Character:<b> " +
               d.data.char +
               "</b><br/> Occurrence(s):  <b>" +
               d.data.value +
@@ -156,34 +151,28 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .on("mousemove", function (e, d) {
         tooltip
-          .html(
-            "Character: <b>" +
-              d.data.char +
-              "</b><br/> Occurrence(s):  <b>" +
-              d.data.value +
-              "</b>"
-          )
-          .style("left", `${e.pageX + 5}px`) // Move with cursor
+          .style("left", `${e.pageX + 5}px`)
           .style("top", `${e.pageY + 20}px`);
-        // console.log(e.x, e.y);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
       })
+      // Gets the leaf that is clicked and generates the sankey data and graph
       .on("click", (e, d) => {
-        console.log(`Node: ${d.data.char}`);
         currentChar = d.data.char;
-        sankeyData = generateSankeyData(singleStringData, d.data.char);
-        console.log(sankeyData);
-        drawSankey(sankeyData);
+        console.log(`Selected Char: ${d.data.char}`);
+        document.getElementById("flow_label").innerHTML =
+          "Character flow for " + currentChar; // Update sankey diagram title
+        sankeyData = formatSankeyData(singleStringData, d.data.char); // Format text data for Sankey Graph
+        drawSankey(sankeyData); // Draw Sankey Graph
       });
   }
 
   // Format the data for the treemap in a hierarchal structure
   // For each punctuation, consonants, and vowels, it is categorized in a childern node and a list of objects to created for each character(key) and value
   // This helps with styling and access data for d3 treemap
-  function formatData() {
-    data = {
+  function formatTreemapData() {
+    treemapData = {
       name: "characters",
       children: [
         {
@@ -213,17 +202,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Generate Sankey from save text
   function drawSankey(data) {
-    let width_sankey = 600 - margin.left - margin.right;
-    let height_2 = height - margin.top - margin.bottom;
+    let width_sankey = width2 - margin.left - margin.right;
+    let height_sankey = height - margin.top - margin.bottom;
 
     // Clear draw
     diagram.selectAll("*").remove();
+
     // Create svg object
     diagram = d3
       .select("#sankey_svg")
       .append("svg")
       .attr("width", width_sankey + margin.left + margin.right)
-      .attr("height", height_2 + margin.top + margin.bottom)
+      .attr("height", height_sankey + margin.top + margin.bottom)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -237,8 +227,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .style("width", "auto")
       .style("height", "auto")
       .style("padding", "5px")
-      .style("font-size", "12px")
-      .style("border", "1px solid black")
+      .style("font-size", "14px")
+      .style("border", "2px solid black")
       .style("border-radius", "5px")
       .style("visibility", "hidden")
       .style("pointer-events", "none");
@@ -247,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let sankey = d3
       .sankey()
       .nodeWidth(30)
-      .size([width_sankey - margin.left - margin.right, height_2]);
+      .size([width_sankey - margin.left - margin.right, height_sankey]);
 
     path = sankey.links();
 
@@ -281,36 +271,42 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("class", "node")
       .on("mouseover", function (e, d) {
         if (d.node == 0) {
-          // Middle
+          // Get Middle Node
           tooltip
-            .html("Character `" + d.name + "` apperrs " + d.value + " times.")
+            .html(
+              "Character `<b>" +
+                d.name +
+                "</b>` apperrs <b>" +
+                d.value +
+                "</b> times."
+            )
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
         } else if (d.node > incomingLinksIndex) {
-          // Left
+          // Get Left Node
           tooltip
             .html(
-              "Character `" +
+              "Character `<b>" +
                 d.name +
-                "` flows into </br> character `" +
+                "</b>` flows into </br> character `<b>" +
                 currentChar +
-                "` " +
+                "</b>` <b>" +
                 d.value +
-                " times."
+                "</b> times."
             )
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
         } else {
-          // Right
+          // Get Right Node
           tooltip
             .html(
-              "Character `" +
+              "Character `<b>" +
                 currentChar +
-                "` flows into </br> character `" +
+                "</b>` flows into </br> character `<b>" +
                 d.name +
-                "` " +
+                "</b>` <b>" +
                 d.value +
-                " times."
+                "</b> times."
             )
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
@@ -326,6 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
         tooltip.style("visibility", "hidden");
       });
 
+    // Style Nodes
     node
       .append("rect")
       .attr("x", (d) => d.x0)
@@ -336,47 +333,31 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("stroke-width", 1)
       .attr("rx", 1)
       .attr("ry", 1)
+      // Set color based on defined color for each character
       .style("fill", (d) => {
         if (consonants.includes(d.name)) {
           return colorScale("consonants");
         } else if (vowels.includes(d.name)) {
           return colorScale("vowels");
         } else return colorScale("punctuation");
-      })
-
-      .style("stroke", (d) => d3.rgb(d.sankeyColor).darker(2))
-      .append("title");
-    // });
-  }
-
-  // Clears data
-  function clear() {
-    data = {};
-    text = "";
-    singleStringData = "";
-
-    // redraw
-    map.selectAll("*").remove();
-    map = d3.select("#treemap_svg");
+      });
   }
 
   // Reformat Data to work with Sankey Graph
-  function generateSankeyData(text, selectedChar) {
+  function formatSankeyData(text, selectedChar) {
     const afterCounts = new Map();
     const characters = new Map();
-    let charCount = 0;
 
     // Loop through string and find all characters that come immediately the selected char
     for (let i = 0; i < text.length; i++) {
       if (text[i] === selectedChar && i < text.length - 1) {
-        const afterChar = text[i + 1];
-        afterCounts.set(afterChar, (afterCounts.get(afterChar) || 0) + 1);
+        const afterChar = text[i + 1]; // get the character after the selected character
+        afterCounts.set(afterChar, (afterCounts.get(afterChar) || 0) + 1); // Maps each character and increment value by 1
       }
     }
 
     // Loop through string and find all characters
     for (let i = 0; i < text.length; i++) {
-      charCount++;
       const char = text[i];
       characters.set(char, (characters.get(char) || 0) + 1);
     }
@@ -398,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function () {
       index++;
     });
 
-    incomingLinksIndex = index;
+    incomingLinksIndex = index; // Keep track index for the the all characters (nodes on the left side of the sankey graph)
 
     // Add each node and link for all the characters
     characters.forEach((count, char) => {
@@ -408,6 +389,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     return { nodes, links };
+  }
+
+  // Clears data
+  function clear() {
+    // Clear variables
+    treemapData = {};
+    text = "";
+    singleStringData = "";
+
+    // redraw
+    map.selectAll("*").remove();
+    map = d3.select("#treemap_svg");
   }
 
   // Add an event listener to the button
