@@ -14,8 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
   let charCount = { consonants: {}, vowels: {}, punctuation: {} };
 
-  // Create treemap
+  // Create treemap and sankey
   let map = d3.select("#treemap_svg");
+  let diagram = d3.select("#sankey_svg");
 
   // Categorize and save the inputted text
   function saveText() {
@@ -64,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Generate TreeMap for save text
   function drawTreemap() {
-    // Clear draw
+    // redraw
     map.selectAll("*").remove();
     map = d3.select("#treemap_svg");
 
@@ -187,12 +188,15 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
+  // Generate Sankey from save text
   function drawSankey() {
     let width_sankey = 600 - margin.left - margin.right;
     let height_2 = height - margin.top - margin.bottom;
 
+    // Clear draw
+    diagram.selectAll("*").remove();
     // Create svg object
-    let diagram = d3
+    diagram = d3
       .select("#sankey_svg")
       .append("svg")
       .attr("width", width_sankey + margin.left + margin.right)
@@ -200,6 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    // Generate tooltip
     let tooltip = d3
       .select("body")
       .append("div")
@@ -227,6 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     path = sankey.links();
 
+    //Load in data
     d3.json("sankey.json").then(function (sankeydata) {
       graph = sankey(sankeydata);
 
