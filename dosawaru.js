@@ -8,6 +8,12 @@ const consonants = "bcdfghjklmnpqrstvwxz";
 const vowels = "aeiouy";
 const punctuation = ".,!?:;";
 
+// Define Color Scale
+const colorScale = d3
+  .scaleOrdinal()
+  .domain(["consonants", "vowels", "punctuation"])
+  .range(["#A7C7E7", "#FFB07C", "#FF6961"]);
+
 let data = {};
 let text = "";
 let singleStringData = "";
@@ -88,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .sort((a, b) => b.value - a.value); // Sort by desending order
 
     // Treemap Color
-    const treeColor = d3.scaleOrdinal(d3.schemeCategory10);
+    const treeColor = colorScale;
 
     // Layout for treemap
     const treemapLayout = d3
@@ -161,6 +167,12 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
+      })
+      .on("click", (e, d) => {
+        console.log(`Node: ${d.data.char}`);
+        sankeyData = generateSankeyData(singleStringData, d.data.char);
+        console.log(sankeyData);
+        drawSankey(sankeyData);
       });
   }
 
@@ -235,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .size([width_sankey - margin.left - margin.right, height_2]);
 
     // Sankey Color
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
+    const sankeyColor = colorScale;
 
     path = sankey.links();
 
@@ -291,8 +303,19 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("y", (d) => d.y0)
       .attr("height", (d) => d.y1 - d.y0)
       .attr("width", sankey.nodeWidth())
-      .style("fill", (d) => (d.color = color(d.name.replace(/ .*/, ""))))
-      .style("stroke", (d) => d3.rgb(d.color).darker(2))
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .attr("rx", 1)
+      .attr("ry", 1)
+      .style("fill", (d) => {
+        if (consonants.includes(d.name)) {
+          return colorScale("consonants");
+        } else if (vowels.includes(d.name)) {
+          return colorScale("vowels");
+        } else return colorScale("punctuation");
+      })
+
+      .style("stroke", (d) => d3.rgb(d.sankeyColor).darker(2))
       .append("title");
     // });
   }
@@ -364,9 +387,6 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       clear();
       saveText();
-      sankeyData = generateSankeyData(singleStringData, "a");
-      console.log(sankeyData);
-      drawSankey(sankeyData);
     }
   });
 });
