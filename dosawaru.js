@@ -18,6 +18,8 @@ let data = {};
 let text = "";
 let singleStringData = "";
 let sankeyData;
+let currentChar = "";
+let incomingLinksIndex = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
@@ -170,6 +172,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .on("click", (e, d) => {
         console.log(`Node: ${d.data.char}`);
+        currentChar = d.data.char;
         sankeyData = generateSankeyData(singleStringData, d.data.char);
         console.log(sankeyData);
         drawSankey(sankeyData);
@@ -246,15 +249,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .nodeWidth(30)
       .size([width_sankey - margin.left - margin.right, height_2]);
 
-    // Sankey Color
-    const sankeyColor = colorScale;
-
     path = sankey.links();
 
-    // //Load in data
-    // d3.json("sankey.json").then(function (sankeydata) {
-    //   graph = sankey(sankeydata);
-
+    //Load in data
     const { nodes, links } = sankey({
       nodes: data.nodes.map((d) => ({ ...d })),
       links: data.links.map((d) => ({ ...d })),
@@ -273,7 +270,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .style("opacity", 0.7)
       .style("fill", "none")
       .style("stroke-width", (d) => Math.max(1, d.width));
-    // .sort((a, b) => b.dy - a.dy);
 
     // Add nodes
     let node = diagram
@@ -284,14 +280,47 @@ document.addEventListener("DOMContentLoaded", function () {
       .append("g")
       .attr("class", "node")
       .on("mouseover", function (e, d) {
-        tooltip.style("visibility", "visible").html("Character:<b>" + d.name);
+        if (d.node == 0) {
+          // Middle
+          tooltip
+            .html("Character `" + d.name + "` apperrs " + d.value + " times.")
+            .style("left", `${e.pageX + 5}px`)
+            .style("top", `${e.pageY + 20}px`);
+        } else if (d.node > incomingLinksIndex) {
+          // Left
+          tooltip
+            .html(
+              "Character `" +
+                d.name +
+                "` flows into </br> character `" +
+                currentChar +
+                "` " +
+                d.value +
+                " times."
+            )
+            .style("left", `${e.pageX + 5}px`)
+            .style("top", `${e.pageY + 20}px`);
+        } else {
+          // Right
+          tooltip
+            .html(
+              "Character `" +
+                currentChar +
+                "` flows into </br> character `" +
+                d.name +
+                "` " +
+                d.value +
+                " times."
+            )
+            .style("left", `${e.pageX + 5}px`)
+            .style("top", `${e.pageY + 20}px`);
+        }
       })
       .on("mousemove", function (e, d) {
         tooltip
-          .html("Character: <b>" + d.name)
-          .style("left", `${e.pageX + 5}px`) // Move with cursor
+          .style("visibility", "visible")
+          .style("left", `${e.pageX + 5}px`)
           .style("top", `${e.pageY + 20}px`);
-        // console.log(e.x, e.y);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
@@ -301,7 +330,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .append("rect")
       .attr("x", (d) => d.x0)
       .attr("y", (d) => d.y0)
-      .attr("height", (d) => d.y1 - d.y0)
+      .attr("height", (d) => Math.max(5, d.y1 - d.y0))
       .attr("width", sankey.nodeWidth())
       .attr("stroke", "black")
       .attr("stroke-width", 1)
@@ -364,10 +393,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Add each node and link for all the characters that come immediately the selected char
     afterCounts.forEach((count, char) => {
-      nodes.push({ node: index, name: `${selectedChar}${char}` });
+      nodes.push({ node: index, name: `${char}` });
       links.push({ source: selectedCharIndex, target: index, value: count });
       index++;
     });
+
+    incomingLinksIndex = index;
 
     // Add each node and link for all the characters
     characters.forEach((count, char) => {
