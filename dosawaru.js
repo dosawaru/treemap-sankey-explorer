@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Generate Sankey from save text
-  function drawSankey() {
+  function drawSankey(data) {
     let width_sankey = 600 - margin.left - margin.right;
     let height_2 = height - margin.top - margin.bottom;
 
@@ -231,8 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Set sankey properties
     let sankey = d3
       .sankey()
-      .nodeWidth(20)
-      .nodePadding(20)
+      .nodeWidth(30)
       .size([width_sankey - margin.left - margin.right, height_2]);
 
     // Sankey Color
@@ -240,59 +239,65 @@ document.addEventListener("DOMContentLoaded", function () {
 
     path = sankey.links();
 
-    //Load in data
-    d3.json("sankey.json").then(function (sankeydata) {
-      graph = sankey(sankeydata);
+    // //Load in data
+    // d3.json("sankey.json").then(function (sankeydata) {
+    //   graph = sankey(sankeydata);
 
-      // Add links
-      link = diagram
-        .append("g")
-        .selectAll(".link")
-        .data(graph.links)
-        .enter()
-        .append("path")
-        .attr("class", "link")
-        .attr("d", d3.sankeyLinkHorizontal())
-        .style("stroke", "grey")
-        .style("opacity", 0.7)
-        .style("fill", "none")
-        .style("stroke-width", (d) => Math.max(1, d.width));
-      // .sort((a, b) => b.dy - a.dy);
-
-      // Add nodes
-      let node = diagram
-        .append("g")
-        .selectAll(".node")
-        .data(graph.nodes)
-        .enter()
-        .append("g")
-        .attr("class", "node")
-        .on("mouseover", function (e, d) {
-          tooltip.style("visibility", "visible").html("Character:<b>" + d.name);
-        })
-        .on("mousemove", function (e, d) {
-          tooltip
-            .html("Character: <b>" + d.name)
-            .style("left", `${e.pageX + 5}px`) // Move with cursor
-            .style("top", `${e.pageY + 20}px`);
-          // console.log(e.x, e.y);
-        })
-        .on("mouseout", function (e, d) {
-          tooltip.style("visibility", "hidden");
-        });
-
-      node
-        .append("rect")
-        .attr("x", (d) => d.x0)
-        .attr("y", (d) => d.y0)
-        .attr("height", (d) => d.y1 - d.y0)
-        .attr("width", sankey.nodeWidth())
-        .style("fill", (d) => (d.color = color(d.name.replace(/ .*/, ""))))
-        .style("stroke", (d) => d3.rgb(d.color).darker(2))
-        .append("title");
+    const { nodes, links } = sankey({
+      nodes: data.nodes.map((d) => ({ ...d })),
+      links: data.links.map((d) => ({ ...d })),
     });
+
+    // Add links
+    link = diagram
+      .append("g")
+      .selectAll(".link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("d", d3.sankeyLinkHorizontal())
+      .style("stroke", "grey")
+      .style("opacity", 0.7)
+      .style("fill", "none")
+      .style("stroke-width", (d) => Math.max(1, d.width));
+    // .sort((a, b) => b.dy - a.dy);
+
+    // Add nodes
+    let node = diagram
+      .append("g")
+      .selectAll(".node")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .on("mouseover", function (e, d) {
+        tooltip.style("visibility", "visible").html("Character:<b>" + d.name);
+      })
+      .on("mousemove", function (e, d) {
+        tooltip
+          .html("Character: <b>" + d.name)
+          .style("left", `${e.pageX + 5}px`) // Move with cursor
+          .style("top", `${e.pageY + 20}px`);
+        // console.log(e.x, e.y);
+      })
+      .on("mouseout", function (e, d) {
+        tooltip.style("visibility", "hidden");
+      });
+
+    node
+      .append("rect")
+      .attr("x", (d) => d.x0)
+      .attr("y", (d) => d.y0)
+      .attr("height", (d) => d.y1 - d.y0)
+      .attr("width", sankey.nodeWidth())
+      .style("fill", (d) => (d.color = color(d.name.replace(/ .*/, ""))))
+      .style("stroke", (d) => d3.rgb(d.color).darker(2))
+      .append("title");
+    // });
   }
 
+  // Clears data
   function clear() {
     data = {};
     text = "";
@@ -303,15 +308,25 @@ document.addEventListener("DOMContentLoaded", function () {
     map = d3.select("#treemap_svg");
   }
 
+  // Reformat Data to work with Sankey Graph
   function generateSankeyData(text, selectedChar) {
     const afterCounts = new Map();
+    const characters = new Map();
+    let charCount = 0;
 
     // Loop through string and find all characters that come immediately the selected char
     for (let i = 0; i < text.length; i++) {
       if (text[i] === selectedChar && i < text.length - 1) {
         const afterChar = text[i + 1];
-        afterCounts.set(afterChar, 1);
+        afterCounts.set(afterChar, (afterCounts.get(afterChar) || 0) + 1);
       }
+    }
+
+    // Loop through string and find all characters
+    for (let i = 0; i < text.length; i++) {
+      charCount++;
+      const char = text[i];
+      characters.set(char, (characters.get(char) || 0) + 1);
     }
 
     // Create Node and Link
@@ -331,6 +346,13 @@ document.addEventListener("DOMContentLoaded", function () {
       index++;
     });
 
+    // Add each node and link for all the characters
+    characters.forEach((count, char) => {
+      nodes.push({ node: index, name: `${char}` });
+      links.push({ source: index, target: selectedCharIndex, value: count });
+      index++;
+    });
+
     return { nodes, links };
   }
 
@@ -344,7 +366,7 @@ document.addEventListener("DOMContentLoaded", function () {
       saveText();
       sankeyData = generateSankeyData(singleStringData, "a");
       console.log(sankeyData);
-      drawSankey();
+      drawSankey(sankeyData);
     }
   });
 });
