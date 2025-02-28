@@ -11,6 +11,7 @@ const punctuation = ".,!?:;";
 let data = {};
 let text = "";
 let singleStringData = "";
+let sankeyData;
 
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
@@ -302,6 +303,37 @@ document.addEventListener("DOMContentLoaded", function () {
     map = d3.select("#treemap_svg");
   }
 
+  function generateSankeyData(text, selectedChar) {
+    const afterCounts = new Map();
+
+    // Loop through string and find all characters that come immediately the selected char
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === selectedChar && i < text.length - 1) {
+        const afterChar = text[i + 1];
+        afterCounts.set(afterChar, 1);
+      }
+    }
+
+    // Create Node and Link
+    const nodes = [];
+    const links = [];
+
+    // Add the selected charcater node
+    nodes.push({ node: 0, name: selectedChar });
+    const selectedCharIndex = 0; // Index of the selected charcater
+
+    let index = 1; // start index after selected charcater
+
+    // Add each node and link for all the characters that come immediately the selected char
+    afterCounts.forEach((count, char) => {
+      nodes.push({ node: index, name: `${selectedChar}${char}` });
+      links.push({ source: selectedCharIndex, target: index, value: count });
+      index++;
+    });
+
+    return { nodes, links };
+  }
+
   // Add an event listener to the button
   document.getElementById("save").addEventListener("click", function () {
     //Check for valid input
@@ -310,6 +342,8 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       clear();
       saveText();
+      sankeyData = generateSankeyData(singleStringData, "a");
+      console.log(sankeyData);
       drawSankey();
     }
   });
