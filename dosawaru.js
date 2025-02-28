@@ -282,7 +282,7 @@ document.addEventListener("DOMContentLoaded", function () {
             )
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
-        } else if (d.node > incomingLinksIndex) {
+        } else if (d.node >= incomingLinksIndex) {
           // Get Left Node
           tooltip
             .html(
