@@ -23,6 +23,10 @@ let sankeyData;
 let currentChar = "";
 let incomingLinksIndex = 0;
 
+// Get the width and height of the screen
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
+
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
   let charCount = { consonants: {}, vowels: {}, punctuation: {} };
@@ -150,9 +154,27 @@ document.addEventListener("DOMContentLoaded", function () {
           );
       })
       .on("mousemove", function (e, d) {
+        // Get the width and height of the tooltip
+        let tooltipWidth = tooltip.node().offsetWidth;
+        let tooltipHeight = tooltip.node().offsetHeight;
+
+        // Get the X and Y position of the mouse
+        let tooltipX = e.pageX;
+        let tooltipY = e.pageY;
+
+        // Check right boundary
+        if (tooltipX + tooltipWidth + 5 > windowWidth) {
+          tooltipX = windowWidth - tooltipWidth - 5;
+        }
+
+        // Check bottom boundary
+        if (tooltipY + tooltipHeight + 20 > windowHeight) {
+          tooltipY = windowHeight - tooltipHeight - 20;
+        }
+
         tooltip
-          .style("left", `${e.pageX + 5}px`)
-          .style("top", `${e.pageY + 20}px`);
+          .style("left", `${tooltipX + 5}px`)
+          .style("top", `${tooltipY + 20}px`);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
@@ -280,6 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 d.value +
                 "</b> times."
             )
+            .style("visibility", "visible")
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
         } else if (d.node >= incomingLinksIndex) {
@@ -294,6 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 d.value +
                 "</b> times."
             )
+            .style("visibility", "visible")
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
         } else {
@@ -308,15 +332,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 d.value +
                 "</b> times."
             )
+            .style("visibility", "visible")
             .style("left", `${e.pageX + 5}px`)
             .style("top", `${e.pageY + 20}px`);
         }
       })
       .on("mousemove", function (e, d) {
+        // Get the width and height of the tooltip
+        let tooltipWidth = tooltip.node().offsetWidth;
+        let tooltipHeight = tooltip.node().offsetHeight;
+
+        // Get the X and Y position of the mouse
+        let tooltipX = e.pageX;
+        let tooltipY = e.pageY;
+
+        // Check right boundary
+        if (tooltipX + tooltipWidth + 5 > windowWidth) {
+          tooltipX = windowWidth - tooltipWidth - 5;
+        }
+
+        // Check bottom boundary
+        if (tooltipY + tooltipHeight + 20 > windowHeight) {
+          tooltipY = windowHeight - tooltipHeight - 20;
+        }
+
         tooltip
-          .style("visibility", "visible")
-          .style("left", `${e.pageX + 5}px`)
-          .style("top", `${e.pageY + 20}px`);
+          .style("left", `${tooltipX + 5}px`)
+          .style("top", `${tooltipY + 20}px`);
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
