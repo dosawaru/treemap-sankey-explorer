@@ -346,9 +346,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Reformat Data to work with Sankey Graph
   function formatSankeyData(text, selectedChar) {
     const afterCounts = new Map();
-    const characters = new Map();
+    const beforeCounts = new Map();
 
-    // Loop through string and find all characters that come immediately the selected char
+    // Loop through string and find all characters that come immediately after the selected char
     for (let i = 0; i < text.length; i++) {
       if (text[i] === selectedChar && i < text.length - 1) {
         const afterChar = text[i + 1]; // get the character after the selected character
@@ -356,10 +356,12 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // Loop through string and find all characters
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      characters.set(char, (characters.get(char) || 0) + 1);
+    // Loop through string and find all characters that come immediately before the selected char
+    for (let i = 1; i < text.length; i++) {
+      if (text[i] === selectedChar && i < text.length) {
+        const beforeChar = text[i - 1]; // get the character before the selected character
+        beforeCounts.set(beforeChar, (beforeCounts.get(beforeChar) || 0) + 1);
+      }
     }
 
     // Create Node and Link
@@ -372,17 +374,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let index = 1; // start index after selected charcater
 
-    // Add each node and link for all the characters that come immediately the selected char
+    // Add each node and link for all the characters that come immediately after the selected char
     afterCounts.forEach((count, char) => {
       nodes.push({ node: index, name: `${char}` });
       links.push({ source: selectedCharIndex, target: index, value: count });
       index++;
     });
 
-    incomingLinksIndex = index; // Keep track index for the the all characters (nodes on the left side of the sankey graph)
+    incomingLinksIndex = index; // Keep track index for the the all characters immediately before the selected char (nodes on the left side of the sankey graph)
 
-    // Add each node and link for all the characters
-    characters.forEach((count, char) => {
+    // Add each node and link for all the characters that come immediately before the selected char
+    beforeCounts.forEach((count, char) => {
       nodes.push({ node: index, name: `${char}` });
       links.push({ source: index, target: selectedCharIndex, value: count });
       index++;
