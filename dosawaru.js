@@ -15,17 +15,21 @@ const colorScale = d3
   .domain(["consonants", "vowels", "punctuation"])
   .range(["#A7C7E7", "#FFB07C", "#FF6961"]);
 
+// Get the width and height of the screen
+let windowWidth = window.innerWidth;
+let windowHeight = window.innerHeight;
+
 // Global varibales
-let treemapData = {};
+// Stored Data
+let treemapData;
+let sankeyData;
+
+// Keep track of important variables
 let text = "";
 let singleStringData = "";
-let sankeyData;
-let currentChar = "";
+let currentselectChar = "";
+let currenthoverChar = "";
 let incomingLinksIndex = 0;
-
-// Get the width and height of the screen
-const windowWidth = window.innerWidth;
-const windowHeight = window.innerHeight;
 
 document.addEventListener("DOMContentLoaded", function () {
   // Store the count for each letter/punctutaion
@@ -37,9 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Categorize and save the inputted text
   function saveText() {
-    // Clears char count
-    charCount = { consonants: {}, vowels: {}, punctuation: {} };
-
     // Get the text from the textarea
     text = document.getElementById("wordbox").value.toLowerCase();
 
@@ -73,6 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
         singleStringData += c;
       }
     }
+
     //Check for valid input
     if (consonantsCount + vowelsCount + punctuationCount == 0) {
       alert(
@@ -88,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Generate TreeMap for save text
   function drawTreemap() {
-    // Format Data
+    // Reformat Data
     formatTreemapData();
 
     // Give the data in cluster format
@@ -143,6 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("opacity", 0.9)
       // Use mouseover, mousemove, and mouseout to keep track of the mouse position on screen and display the information when hovering over the leaf
       .on("mouseover", function (e, d) {
+        currenthoverChar = d.data.char;
         tooltip
           .style("visibility", "visible")
           .html(
@@ -152,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
               d.data.value +
               "</b>"
           );
+        hoverIn();
       })
       .on("mousemove", function (e, d) {
         // Get the width and height of the tooltip
@@ -161,6 +165,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // Get the X and Y position of the mouse
         let tooltipX = e.pageX;
         let tooltipY = e.pageY;
+
+        windowWidth = window.innerWidth;
+        windowHeight = window.innerHeight;
 
         // Check right boundary
         if (tooltipX + tooltipWidth + 5 > windowWidth) {
@@ -178,13 +185,14 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
+        hoverOut();
       })
       // Gets the leaf that is clicked and generates the sankey data and graph
       .on("click", (e, d) => {
-        currentChar = d.data.char;
+        currentselectChar = d.data.char;
         console.log(`Selected Char: ${d.data.char}`);
         document.getElementById("flow_label").innerHTML =
-          "Character flow for " + currentChar; // Update sankey diagram title
+          "Character flow for " + currentselectChar; // Update sankey diagram title
         sankeyData = formatSankeyData(singleStringData, d.data.char); // Format text data for Sankey Graph
         drawSankey(sankeyData); // Draw Sankey Graph
       });
@@ -298,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .html(
               "Character `<b>" +
                 d.name +
-                "</b>` apperrs <b>" +
+                "</b>` appears <b>" +
                 d.value +
                 "</b> times."
             )
@@ -312,7 +320,7 @@ document.addEventListener("DOMContentLoaded", function () {
               "Character `<b>" +
                 d.name +
                 "</b>` flows into </br> character `<b>" +
-                currentChar +
+                currentselectChar +
                 "</b>` <b>" +
                 d.value +
                 "</b> times."
@@ -325,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
           tooltip
             .html(
               "Character `<b>" +
-                currentChar +
+                currentselectChar +
                 "</b>` flows into </br> character `<b>" +
                 d.name +
                 "</b>` <b>" +
@@ -346,6 +354,9 @@ document.addEventListener("DOMContentLoaded", function () {
         let tooltipX = e.pageX;
         let tooltipY = e.pageY;
 
+        windowWidth = window.innerWidth;
+        windowHeight = window.innerHeight;
+
         // Check right boundary
         if (tooltipX + tooltipWidth + 5 > windowWidth) {
           tooltipX = windowWidth - tooltipWidth - 5;
@@ -362,6 +373,11 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .on("mouseout", function (e, d) {
         tooltip.style("visibility", "hidden");
+        d3.select(this)
+          .transition()
+          .duration(50)
+          .attr("stroke", "black")
+          .attr("stroke-width", 1);
       });
 
     // Style Nodes
@@ -375,6 +391,13 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("stroke-width", 1)
       .attr("rx", 1)
       .attr("ry", 1)
+      .on("mouseover", function (e, d) {
+        currenthoverChar = d.name;
+        hoverIn();
+      })
+      .on("mouseout", function (e, d) {
+        hoverOut();
+      })
       // Set color based on defined color for each character
       .style("fill", (d) => {
         if (consonants.includes(d.name)) {
@@ -441,10 +464,46 @@ document.addEventListener("DOMContentLoaded", function () {
     treemapData = {};
     text = "";
     singleStringData = "";
+    charCount = { consonants: {}, vowels: {}, punctuation: {} };
 
     // redraw
     map.selectAll("*").remove();
     map = d3.select("#treemap_svg");
+  }
+
+  // Hover function to work with both the leaf and node simultaneously
+  function hoverIn() {
+    d3.selectAll(".leaf")
+      .filter((d) => d.data.char == currenthoverChar) // Filter for the current letter that is being hovered over
+      .transition()
+      .duration(50)
+      .attr("stroke", "black")
+      .attr("stroke-width", 3);
+
+    d3.selectAll(".node rect")
+      .filter((d) => d.name == currenthoverChar)
+      .transition()
+      .duration(50)
+      .attr("stroke", "black")
+      .attr("stroke-width", 3);
+  }
+
+  function hoverOut() {
+    d3.selectAll(".leaf")
+      .filter((d) => d.data.char == currenthoverChar)
+      .transition()
+      .duration(50)
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    d3.selectAll(".node rect")
+      .filter((d) => d.name == currenthoverChar)
+      .transition()
+      .duration(50)
+      .attr("stroke", "black")
+      .attr("stroke-width", 1);
+
+    console.log(currenthoverChar);
   }
 
   // Add an event listener to the button
