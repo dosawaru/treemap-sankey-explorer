@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("class", "leaf")
       .attr("rx", 1)
       .attr("ry", 1)
-      .attr("opacity", 0.9)
+      .attr("opacity", 1)
       // Use mouseover, mousemove, and mouseout to keep track of the mouse position on screen and display the information when hovering over the leaf
       .on("mouseover", function (e, d) {
         currenthoverChar = d.data.char;
@@ -478,6 +478,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .transition()
       .duration(50)
       .attr("stroke", "black")
+      .attr("opacity", 0.7)
       .attr("stroke-width", 3);
 
     d3.selectAll(".node rect")
@@ -485,6 +486,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .transition()
       .duration(50)
       .attr("stroke", "black")
+      .attr("opacity", 0.7)
       .attr("stroke-width", 3);
   }
 
@@ -494,6 +496,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .transition()
       .duration(50)
       .attr("stroke", "black")
+      .attr("opacity", 1)
       .attr("stroke-width", 1);
 
     d3.selectAll(".node rect")
@@ -501,6 +504,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .transition()
       .duration(50)
       .attr("stroke", "black")
+      .attr("opacity", 1)
       .attr("stroke-width", 1);
 
     console.log(currenthoverChar);
